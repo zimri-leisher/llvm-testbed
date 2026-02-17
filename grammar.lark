@@ -1,0 +1,33 @@
+input: (statement [_NEWLINE])*
+
+statement: expr
+
+expr: number ADD number
+
+number: DEC_NUMBER
+      | FLOAT_NUMBER
+
+ADD: "+"
+
+_NEWLINE: ( /\r?\n[\t ]*/ | COMMENT )+
+
+%ignore /[\t \f]+/  // WS
+%ignore /\\[\t \f]*\r?\n/   // LINE_CONT
+%ignore COMMENT
+%declare _INDENT _DEDENT
+
+STRING: /("(?!"").*?(?<!\\)(\\\\)*?"|'(?!'').*?(?<!\\)(\\\\)*?')/i
+
+# -2 prio so we resolve after floats
+DEC_NUMBER.-2:   "1".."9"        ("_"?  "0".."9"                       )*
+             |   "0"             ("_"?  "0"                            )* /(?![1-9xX])/
+
+# Hex integer literals (0x or 0X prefix)
+HEX_NUMBER: ("0x" | "0X") ("_"? /[0-9a-fA-F]/)+
+
+_SPECIAL_DEC: "0".."9"        ("_"?  "0".."9"                       )*
+
+DECIMAL: "." _SPECIAL_DEC | _SPECIAL_DEC "." _SPECIAL_DEC
+_EXP: ("e"|"E") ["+" | "-"] _SPECIAL_DEC
+# -1 prio so we resolve the .. syntax in for loop range first
+FLOAT_NUMBER.-1: _SPECIAL_DEC _EXP | DECIMAL _EXP?
